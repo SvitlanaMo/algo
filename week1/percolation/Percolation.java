@@ -81,7 +81,10 @@ public class Percolation {
 
         if (this.isTop(row, col)) this.connectToTop(row, col);
 
-        if (this.isBottom(row, col)) this.connectToBottom(row, col);
+        // we can not connect to bottom directly, we need to check if the site is "FULL" before connecting to bottom site.
+        if (this.isBottom(row, col) && this.uf.connected(0, this.posToIdx(row, col))) {
+            this.connectToBottom(row, col);
+        }
     }
 
     // is site (row, col) open?
