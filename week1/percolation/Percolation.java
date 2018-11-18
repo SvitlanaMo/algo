@@ -97,6 +97,11 @@ public class Percolation {
     public boolean isFull(int row, int col) {
         if (!inValidRange(row, col)) throw new IllegalArgumentException("out of range");
         int idx = this.posToIdx(row, col);
+        // the following line to solve the case
+        // where first open bottom site then all the way up to the top
+        // like I shape, it will not percolate immediately
+        // cause it didn't call open on bottom again.
+        if (this.isBottom(row, col) && this.uf.connected(0, idx)) this.connectToBottom(row, col);
         return this.isOpen(row, col) && this.uf.connected(0, idx);
     }
 
