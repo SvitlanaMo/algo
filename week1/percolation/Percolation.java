@@ -16,6 +16,7 @@ public class Percolation {
 
     // create n-by-n grid, with all sites blocked
     public Percolation(int n) {
+        if (n <= 0) throw new IllegalArgumentException("invalid n");
         this.n = n;
         int size = n * n + 2;
         this.uf = new WeightedQuickUnionUF(n * n + 2);
@@ -60,8 +61,13 @@ public class Percolation {
         return row == this.n && col <= this.n && col > 0;
     }
 
+    private boolean inValidRange(int row, int col) {
+        return row > 0 && col > 0 && row <= this.n && col <= this.n;
+    }
+
     // open site (row, col) if it is not open already
     public void open(int row, int col) {
+        if (!inValidRange(row, col)) throw new IllegalArgumentException("out of range");
         this.openedSitesArray[this.posToIdx(row, col)] = 1;
         this.openedSitesNumber++;
 
@@ -80,11 +86,13 @@ public class Percolation {
 
     // is site (row, col) open?
     public boolean isOpen(int row, int col) {
+        if (!inValidRange(row, col)) throw new IllegalArgumentException("out of range");
         return this.openedSitesArray[this.posToIdx(row, col)] == 1;
     }
 
     // is site (row, col) full?
     public boolean isFull(int row, int col) {
+        if (!inValidRange(row, col)) throw new IllegalArgumentException("out of range");
         int idx = this.posToIdx(row, col);
         return this.isOpen(row, col) && this.uf.connected(0, idx);
     }
