@@ -1,32 +1,30 @@
 import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 
 public class Percolation {
-    private WeightedQuickUnionUF uf;
-    private int n;
+    private final WeightedQuickUnionUF uf;
+    private final int n;
     private int openedSitesNumber = 0;
-    private int[] openedSitesArray;
-
-    // up, right, down, left
-    private int[][] directions = new int[][] {
-            { -1, 0 },
-            { 0, 1 },
-            { 1, 0 },
-            { 0, -1 }
-    };
+    private boolean[] openedSitesArray;
+    private boolean isPerlocated;
+    private boolean[] topConnected;
+    private boolean[] bottomConnected;
 
     // create n-by-n grid, with all sites blocked
     public Percolation(int n) {
         if (n <= 0) throw new IllegalArgumentException("invalid n");
         this.n = n;
         int size = n * n + 2;
-        this.uf = new WeightedQuickUnionUF(n * n + 2);
-        this.openedSitesArray = new int[n * n + 2];
+        this.uf = new WeightedQuickUnionUF(size);
+        this.openedSitesArray = new boolean[size];
+        this.isPerlocated = false;
+        this.topConnected = new boolean[size];
+        this.bottomConnected = new boolean[size];
 
         // first element to connect top sites
-        this.openedSitesArray[0] = 1;
+        this.openedSitesArray[0] = true;
 
         // second element to connect bottom sites
-        this.openedSitesArray[1] = 1;
+        this.openedSitesArray[1] = true;
     }
 
     private int posToIdx(int row, int col) {
@@ -36,12 +34,12 @@ public class Percolation {
     }
 
     private int[][] getSurroundings(int row, int col) {
-        int[][] surroundings = new int[4][4];
-        int idx = 0;
-        for (int[] direction : this.directions) {
-            surroundings[idx] = new int[] { row + direction[0], col + direction[1] };
-            idx++;
-        }
+        int[][] surroundings = new int[][] {
+                { row - 1, col },
+                { row, col + 1 },
+                { row + 1, col },
+                { row, col - 1 }
+        };
         return surroundings;
     }
 
@@ -49,12 +47,12 @@ public class Percolation {
         return row == 1 && col <= this.n && col > 0;
     }
 
-    private void connectToTop(int row, int col) {
-        this.uf.union(0, this.posToIdx(row, col));
+    private void connectToTop(int idx) {
+        this.uf.union(0, idx);
     }
 
-    private void connectToBottom(int row, int col) {
-        this.uf.union(1, this.posToIdx(row, col));
+    private void connectToBottom(int idx) {
+        this.uf.union(1, idx);
     }
 
     private boolean isBottom(int row, int col) {
@@ -68,41 +66,57 @@ public class Percolation {
     // open site (row, col) if it is not open already
     public void open(int row, int col) {
         if (!inValidRange(row, col)) throw new IllegalArgumentException("out of range");
-        this.openedSitesArray[this.posToIdx(row, col)] = 1;
-        this.openedSitesNumber++;
+        int idx = this.posToIdx(row, col);
+        if (!this.openedSitesArray[idx]) {
+            this.openedSitesArray[idx] = true;
+            this.openedSitesNumber++;
+            boolean top = false;
+            boolean bottom = false;
 
-        int[][] surroundings = this.getSurroundings(row, col);
-        for (int[] surround : surroundings) {
-            int sRow = surround[0];
-            int sCol = surround[1];
-            if (sRow > 0 && sRow <= this.n && sCol > 0 && sCol <= this.n && this.isOpen(sRow, sCol))
-                this.uf.union(this.posToIdx(row, col), this.posToIdx(sRow, sCol));
-        }
+            // if (this.isBottom(row, col)) this.bottomOpenedSites[col - 1] = idx;
 
-        if (this.isTop(row, col)) this.connectToTop(row, col);
+            int[][] surroundings = this.getSurroundings(row, col);
+            for (int[] surround : surroundings) {
+                int sRow = surround[0];
+                int sCol = surround[1];
+                if (this.inValidRange(sRow, sCol) && this.isOpen(sRow, sCol)) {
+                    int sIdx = this.posToIdx(sRow, sCol);
+                    if (this.topConnected[this.uf.find(idx)] || this.topConnected[this.uf
+                            .find(sIdx)]) {
+                        top = true;
+                    }
 
-        // we can not connect to bottom directly, we need to check if the site is "FULL" before connecting to bottom site.
-        if (this.isBottom(row, col) && this.uf.connected(0, this.posToIdx(row, col))) {
-            this.connectToBottom(row, col);
+                    if (this.bottomConnected[this.uf.find(idx)] || this.bottomConnected[this.uf
+                            .find(sIdx)]) {
+                        bottom = true;
+                    }
+                    this.uf.union(idx, sIdx);
+                }
+            }
+
+            if (this.isTop(row, col)) top = true;
+            if (this.isBottom(row, col)) bottom = true;
+
+            this.topConnected[this.uf.find(idx)] = top;
+            this.bottomConnected[this.uf.find(idx)] = bottom;
+
+            if (top && bottom) {
+                this.isPerlocated = true;
+            }
         }
     }
 
     // is site (row, col) open?
     public boolean isOpen(int row, int col) {
         if (!inValidRange(row, col)) throw new IllegalArgumentException("out of range");
-        return this.openedSitesArray[this.posToIdx(row, col)] == 1;
+        return this.openedSitesArray[this.posToIdx(row, col)];
     }
 
     // is site (row, col) full?
     public boolean isFull(int row, int col) {
         if (!inValidRange(row, col)) throw new IllegalArgumentException("out of range");
         int idx = this.posToIdx(row, col);
-        // the following line to solve the case
-        // where first open bottom site then all the way up to the top
-        // like I shape, it will not percolate immediately
-        // cause it didn't call open on bottom again.
-        if (this.isBottom(row, col) && this.uf.connected(0, idx)) this.connectToBottom(row, col);
-        return this.isOpen(row, col) && this.uf.connected(0, idx);
+        return this.isOpen(row, col) && this.topConnected[this.uf.find(idx)];
     }
 
     // number of open sites
@@ -112,12 +126,29 @@ public class Percolation {
 
     // does the system percolate?
     public boolean percolates() {
-        return this.uf.connected(0, 1);
+        return this.isPerlocated;
     }
 
     public static void main(String[] args) {
-        // Percolation perc = new Percolation(6);
-        // perc.open(1, 6);
-        // perc.open(2, 6);
+        // In in = new In(args[0]);      // input file
+        // int n = in.readInt();         // n-by-n percolation system
+        // Percolation perc = new Percolation(n);
+        // int count = 1;
+        // boolean cont = true;
+        // while (!in.isEmpty() && cont) {
+        //     int i = in.readInt();
+        //     int j = in.readInt();
+        //     perc.open(i, j);
+        //
+        //     StdOut.println("times: " + count);
+        //     StdOut.println("isOpen: " + perc.isOpen(i, j));
+        //     StdOut.println("isFull: " + perc.isFull(i, j));
+        //     StdOut.println("percolates: " + perc.percolates());
+        //     StdOut.println("No of Open Sites: " + perc.numberOfOpenSites());
+        //
+        //     count++;
+        //     StdOut.println("==========>>>>");
+        //     if (perc.percolates()) cont = false;
+        // }
     }
 }
