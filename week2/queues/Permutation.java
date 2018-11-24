@@ -1,16 +1,15 @@
-import edu.princeton.cs.algs4.In;
+import edu.princeton.cs.algs4.StdIn;
 import edu.princeton.cs.algs4.StdOut;
 
 public class Permutation {
     public static void main(String[] args) {
         if (args.length == 0) throw new IllegalArgumentException();
         int n = Integer.parseInt(args[0]);
-        In in = new In();
 
         RandomizedQueue<String> rq = new RandomizedQueue<String>();
 
-        while (!in.isEmpty()) {
-            String str = in.readString();
+        while (!StdIn.isEmpty()) {
+            String str = StdIn.readString();
             rq.enqueue(str);
         }
 

@@ -87,8 +87,18 @@ public class RandomizedQueue<Item> implements Iterable<Item> {
     public Iterator<Item> iterator() {
         int totalNumber = rq.size();
         Item[] results = (Item[]) new Object[totalNumber];
+
+        // copy all to results
         for (int i = 0; i < totalNumber; i++) {
-            results[i] = sample();
+            results[i] = rq.getAt(i);
+        }
+
+        // shuffle
+        for (int j = 0; j < totalNumber; j++) {
+            int swapIdx = StdRandom.uniform(j, totalNumber);
+            Item tmp = results[j];
+            results[j] = results[swapIdx];
+            results[swapIdx] = tmp;
         }
 
 
@@ -131,10 +141,12 @@ public class RandomizedQueue<Item> implements Iterable<Item> {
         //
         // int count = 0;
         // for (int ele : rq) {
+        //     StdOut.println("1: =" + ele);
         //     count++;
         // }
         //
         // for (int ele : rq) {
+        //     StdOut.println("2: =" + ele);
         //     count++;
         // }
         //
