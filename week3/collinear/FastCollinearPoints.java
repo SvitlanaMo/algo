@@ -4,42 +4,55 @@ import edu.princeton.cs.algs4.StdOut;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
 
-public class BruteCollinearPoints {
-    // finds all line segments containing 4 points
+public class FastCollinearPoints {
+    // finds all line segments containing 4 or more points
     private final ArrayList<LineSegment> lsArr = new ArrayList<LineSegment>();
 
-    public BruteCollinearPoints(Point[] points) {
+    public FastCollinearPoints(Point[] points) {
         checkNull(points);
-        checkDuplicate(points);
-        int len = points.length;
+
         Point[] copy = points.clone();
-        Arrays.sort(copy);
-        int idx = 0;
 
-        for (int i = idx; i < len; i++) {
-            for (int j = i + 1; j < len; j++) {
-                for (int k = j + 1; k < len; k++) {
-                    for (int m = k + 1; m < len; m++) {
-                        if (copy[i].equals(copy[j]) || copy[i].equals(copy[k])
-                                || copy[i].equals(copy[m]) || copy[j].equals(copy[k])
-                                || copy[k].equals(copy[m])) {
-                            throw new IllegalArgumentException();
-                        }
-                        if (copy[i] == null || copy[j] == null || copy[k] == null
-                                || copy[m] == null) {
-                            throw new IllegalArgumentException();
-                        }
+        checkDuplicate(copy);
 
-                        if (copy[i].slopeTo(copy[j]) == copy[i].slopeTo(copy[k])
-                                && copy[i].slopeTo(copy[k]) == copy[i].slopeTo(copy[m])
-                        ) {
-                            LineSegment ls = new LineSegment(copy[i], copy[m]);
+        for (Point pivot : points) {
+            Arrays.sort(copy, pivot.slopeOrder());
+            int j = 0;
+            double previous = 0.0;
+            LinkedList<Point> collinear = new LinkedList<Point>();
+            for (Point p : copy) {
+                if (j == 0 || p.slopeTo(pivot) != previous) {
+                    if (collinear.size() >= 3) {
+                        collinear.add(pivot);
+                        Collections.sort(collinear);
+                        if (pivot.equals(collinear.getFirst())) {
+                            LineSegment ls = new LineSegment(collinear.getFirst(),
+                                                             collinear.getLast());
                             lsArr.add(ls);
                         }
 
                     }
+                    collinear.clear();
                 }
+
+                collinear.add(p);
+                previous = p.slopeTo(pivot);
+                j++;
+            }
+
+            // in case reach 4 or more in the last step
+            if (collinear.size() >= 3) {
+                collinear.add(pivot);
+                Collections.sort(collinear);
+                if (pivot.equals(collinear.getFirst())) {
+                    LineSegment ls = new LineSegment(collinear.getFirst(),
+                                                     collinear.getLast());
+                    lsArr.add(ls);
+                }
+
             }
         }
     }
@@ -53,7 +66,6 @@ public class BruteCollinearPoints {
     public LineSegment[] segments() {
         return this.lsArr.toArray(new LineSegment[this.lsArr.size()]);
     }
-
 
     private void checkNull(Point[] points) {
         if (points == null) {
@@ -91,17 +103,21 @@ public class BruteCollinearPoints {
         StdDraw.enableDoubleBuffering();
         StdDraw.setXscale(0, 32768);
         StdDraw.setYscale(0, 32768);
+
+
         for (Point p : points) {
             p.draw();
         }
         StdDraw.show();
 
         // print and draw the line segments
-        BruteCollinearPoints collinear = new BruteCollinearPoints(points);
+        FastCollinearPoints collinear = new FastCollinearPoints(points);
+
         for (LineSegment segment : collinear.segments()) {
             StdOut.println(segment);
             segment.draw();
         }
         StdDraw.show();
     }
+
 }

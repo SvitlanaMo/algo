@@ -58,9 +58,14 @@ public class Point implements Comparable<Point> {
      * @return the slope between this point and the specified point
      */
     public double slopeTo(Point that) {
+        if (this.x == that.x) {
+            if (that.y == this.y) {
+                return Double.NEGATIVE_INFINITY;
+            }
+            return Double.POSITIVE_INFINITY;
+
+        }
         if (this.y == that.y) return 0.0;
-        if (this.x == that.x) return Double.POSITIVE_INFINITY;
-        if (this.compareTo(that) == 0) return Double.NEGATIVE_INFINITY;
         double result = (that.y - this.y) * 1.0 / (that.x - this.x);
         return result;
     }
@@ -76,12 +81,22 @@ public class Point implements Comparable<Point> {
      * if this point is greater than the argument point
      */
     public int compareTo(Point that) {
-        if (this.x == that.x && this.y == that.y) return 0;
-        if (this.y < that.y || (this.y == that.y && this.x < that.y)) {
-            return -1;
+        if (this.y == that.y) {
+            if (this.x > that.x) {
+                return 1;
+            }
+            else if (this.x < that.x) {
+                return -1;
+            }
+            else {
+                return 0;
+            }
+        }
+        else if (this.y > that.y) {
+            return 1;
         }
         else {
-            return 1;
+            return -1;
         }
     }
 
@@ -97,16 +112,20 @@ public class Point implements Comparable<Point> {
 
     private class BySlope implements Comparator<Point> {
         public int compare(Point p1, Point p2) {
-            double result = slopeTo(p1) - slopeTo(p2);
-            if (result > 0) {
+
+            double slope1 = slopeTo(p1);
+            double slope2 = slopeTo(p2);
+
+            if (slope1 > slope2) {
                 return 1;
             }
-            else if (result < 0) {
+            else if (slope1 < slope2) {
                 return -1;
             }
             else {
                 return 0;
             }
+
         }
     }
 
@@ -126,5 +145,6 @@ public class Point implements Comparable<Point> {
      * Unit tests the Point data type.
      */
     public static void main(String[] args) {
+        // UncommentedEmptyMethodBody
     }
 }
